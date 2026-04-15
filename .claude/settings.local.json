@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm show:*)",
+      "Bash(npm install:*)",
+      "Bash(npx expo:*)",
+      "Bash(npx @babel/parser --plugins jsx src/components/SoulCharacter.js)",
+      "Bash(npx babel:*)",
+      "Bash(node_modules/.bin/react-native bundle:*)"
+    ]
+  }
+}

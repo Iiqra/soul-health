@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Soul Health",
+    "slug": "soul-health",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F5F0E8",
+    "splash": {
+      "backgroundColor": "#F5F0E8"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.soulhealth.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Soul Health needs your location once to calculate precise prayer times for Azan notifications.",
+        "UIBackgroundModes": ["fetch", "remote-notification"]
+      }
+    },
+    "android": {
+      "package": "com.soulhealth.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F0E8"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "SCHEDULE_EXACT_ALARM"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#6B8F71"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Soul Health needs your location once to calculate precise prayer times for Azan notifications."
+        }
+      ]
+    ]
+  }
+}
