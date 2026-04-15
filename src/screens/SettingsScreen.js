@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert, ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import ParchmentCard from '../components/ParchmentCard';
 import { useSettings } from '../context/SettingsContext';
@@ -185,7 +184,7 @@ export default function SettingsScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -360,7 +359,7 @@ export default function SettingsScreen({ navigation }) {
 
         <View style={{ height: 30 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

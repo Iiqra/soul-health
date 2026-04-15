@@ -3,7 +3,6 @@ import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
   Modal, TextInput, Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle } from 'react-native-svg';
 import ParchmentCard from '../components/ParchmentCard';
@@ -224,13 +223,13 @@ export default function SadaqaScreen() {
 
   if (!settings.sadaqa.enabled) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.safe}>
         <View style={styles.disabledWrap}>
           <SadaqaIcon size={72} />
           <Text style={styles.disabledTitle}>Sadaqa not enabled</Text>
           <Text style={styles.disabledSub}>Enable it from Settings to start tracking your acts of giving.</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -251,7 +250,7 @@ export default function SadaqaScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -322,7 +321,7 @@ export default function SadaqaScreen() {
         onClose={() => setShowModal(false)}
         onAdd={handleAdd}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

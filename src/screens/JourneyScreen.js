@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
 import ParchmentCard from '../components/ParchmentCard';
 import { useHealth } from '../context/HealthContext';
@@ -116,7 +115,7 @@ export default function JourneyScreen({ navigation }) {
   const streak = computeStreak(history);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -155,7 +154,7 @@ export default function JourneyScreen({ navigation }) {
 
         <View style={{ height: 30 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

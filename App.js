@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 
 import { SettingsProvider, useSettings } from './src/context/SettingsContext';
@@ -125,7 +125,9 @@ export default function App() {
           <QuranBookmarkProvider>
             <NavigationContainer>
               <StatusBar style="dark" backgroundColor={COLORS.parchment} />
-              <RootNavigator />
+              <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: COLORS.parchment }}>
+                <RootNavigator />
+              </SafeAreaView>
             </NavigationContainer>
           </QuranBookmarkProvider>
         </HealthProvider>

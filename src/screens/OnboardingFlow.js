@@ -557,7 +557,7 @@ export default function OnboardingFlow() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: currentBg }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: currentBg }]} edges={['bottom']}>
       {/* Step dots */}
       <View style={styles.dotsRow}>
         {STEPS.map((_, i) => (
