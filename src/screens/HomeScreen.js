@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import SoulCharacter from '../components/SoulCharacter';
@@ -30,6 +31,9 @@ function GearIcon({ color = COLORS.textMid, size = 22 }) {
 export default function HomeScreen({ navigation }) {
   const { record, history, isLoading } = useHealth();
   const { settings } = useSettings();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const isTablet    = width >= 768;
 
   if (isLoading || !record || !settings) {
     return (
@@ -58,9 +62,16 @@ export default function HomeScreen({ navigation }) {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+  const charSize   = isTablet ? 220 : isLandscape ? 130 : 190;
+  const ringSize   = isTablet ? 148 : isLandscape ? 100 : 128;
+  const maxW       = isTablet ? 600 : '100%';
+
   return (
     <View style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { maxWidth: maxW, alignSelf: 'center', width: '100%' }]}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Header */}
         <View style={styles.header}>
@@ -73,26 +84,53 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Soul Character */}
-        <View style={styles.characterSection}>
-          <SoulCharacter health={score} size={190} />
-          <View style={styles.stateLabelRow}>
-            <Text style={styles.stateEn}>{stateLabel.en}</Text>
-            <Text style={styles.stateAr}>{stateLabel.ar}</Text>
-          </View>
-        </View>
-
-        {/* Score ring + streak */}
-        <View style={styles.ringRow}>
-          <ScoreRing score={score} size={128} />
-          {streak > 0 && (
-            <View style={styles.streakBadge}>
-              <Text style={styles.streakNum}>{streak}</Text>
-              <Text style={styles.streakLabel}>day{streak !== 1 ? 's' : ''}</Text>
-              <Text style={styles.streakLabel}>streak</Text>
+        {/* Landscape / tablet: character + ring side by side */}
+        {isLandscape ? (
+          <View style={styles.landscapeTop}>
+            <View style={styles.landscapeLeft}>
+              <SoulCharacter health={score} size={charSize} />
+              <View style={styles.stateLabelRow}>
+                <Text style={styles.stateEn}>{stateLabel.en}</Text>
+                <Text style={styles.stateAr}>{stateLabel.ar}</Text>
+              </View>
             </View>
-          )}
-        </View>
+            <View style={styles.landscapeRight}>
+              <View style={styles.ringRow}>
+                <ScoreRing score={score} size={ringSize} />
+                {streak > 0 && (
+                  <View style={styles.streakBadge}>
+                    <Text style={styles.streakNum}>{streak}</Text>
+                    <Text style={styles.streakLabel}>day{streak !== 1 ? 's' : ''}</Text>
+                    <Text style={styles.streakLabel}>streak</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        ) : (
+          <>
+            {/* Soul Character */}
+            <View style={styles.characterSection}>
+              <SoulCharacter health={score} size={charSize} />
+              <View style={styles.stateLabelRow}>
+                <Text style={styles.stateEn}>{stateLabel.en}</Text>
+                <Text style={styles.stateAr}>{stateLabel.ar}</Text>
+              </View>
+            </View>
+
+            {/* Score ring + streak */}
+            <View style={styles.ringRow}>
+              <ScoreRing score={score} size={ringSize} />
+              {streak > 0 && (
+                <View style={styles.streakBadge}>
+                  <Text style={styles.streakNum}>{streak}</Text>
+                  <Text style={styles.streakLabel}>day{streak !== 1 ? 's' : ''}</Text>
+                  <Text style={styles.streakLabel}>streak</Text>
+                </View>
+              )}
+            </View>
+          </>
+        )}
 
         {/* Score breakdown */}
         <ParchmentCard style={styles.breakdownCard} padding={14}>
@@ -155,6 +193,11 @@ const styles = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: COLORS.parchment },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.parchment },
   scroll:  { paddingHorizontal: 20, alignItems: 'center' },
+
+  // Landscape / tablet
+  landscapeTop:  { flexDirection: 'row', width: '100%', alignItems: 'center', marginVertical: 8 },
+  landscapeLeft: { flex: 1, alignItems: 'center' },
+  landscapeRight:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header:   { flexDirection: 'row', alignItems: 'flex-start', width: '100%', marginTop: 14, marginBottom: 4 },
   bismillah: { fontSize: 16, color: COLORS.textGold, fontWeight: '500' },

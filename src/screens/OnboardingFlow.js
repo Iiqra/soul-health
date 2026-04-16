@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Animated, Dimensions, Switch, ActivityIndicator,
+  Modal, TextInput, FlatList, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -9,7 +10,7 @@ import * as Location from 'expo-location';
 import SoulCharacter from '../components/SoulCharacter';
 import { useSettings } from '../context/SettingsContext';
 import { DEFAULT_SETTINGS } from '../storage/settingsStorage';
-import { PRAYERS, ZIKAR_PRESETS, QURAN_GOAL_TYPES, SADAQA_FREQUENCIES, AZAN_CALCULATION_METHODS } from '../constants/spiritualData';
+import { PRAYERS, ZIKAR_PRESETS, AZKAR_CATALOG, QURAN_GOAL_TYPES, SADAQA_FREQUENCIES, AZAN_CALCULATION_METHODS } from '../constants/spiritualData';
 import { COLORS } from '../constants/colors';
 import { computeWeights } from '../utils/scoreCalculator';
 import { requestNotificationPermission, scheduleAzanNotifications } from '../utils/prayerTimes';
@@ -240,27 +241,76 @@ function QuranStep({ setup, setSetup }) {
 }
 
 function ZikarStep({ setup, setSetup }) {
-  const toggleItem = (key) => {
+  const [showPicker, setShowPicker]     = useState(false);
+  const [pickerMode, setPickerMode]     = useState('catalog'); // 'catalog' | 'custom'
+  const [customName, setCustomName]     = useState('');
+  const [customArabic, setCustomArabic] = useState('');
+  const [customTarget, setCustomTarget] = useState(33);
+
+  const currentKeys    = setup.zikar.items.map((i) => i.key);
+  const availableCatalog = AZKAR_CATALOG.filter((z) => !currentKeys.includes(z.key));
+
+  const addFromCatalog = (item) => {
+    setSetup((s) => ({
+      ...s,
+      zikar: {
+        ...s.zikar,
+        items: [...s.zikar.items, {
+          key: item.key, label: item.label, arabic: item.arabic,
+          meaning: item.meaning, target: item.defaultTarget, enabled: true,
+        }],
+      },
+    }));
+    setShowPicker(false);
+  };
+
+  const addCustom = () => {
+    if (!customName.trim()) return;
+    setSetup((s) => ({
+      ...s,
+      zikar: {
+        ...s.zikar,
+        items: [...s.zikar.items, {
+          key: `custom_${Date.now()}`, label: customName.trim(),
+          arabic: customArabic.trim(), target: customTarget,
+          enabled: true, isCustom: true,
+        }],
+      },
+    }));
+    setCustomName(''); setCustomArabic(''); setCustomTarget(33);
+    setShowPicker(false);
+  };
+
+  const removeItem = (key) =>
+    setSetup((s) => ({ ...s, zikar: { ...s.zikar, items: s.zikar.items.filter((i) => i.key !== key) } }));
+
+  const toggleItem = (key) =>
     setSetup((s) => ({
       ...s,
       zikar: { ...s.zikar, items: s.zikar.items.map((i) => i.key === key ? { ...i, enabled: !i.enabled } : i) },
     }));
-  };
-  const updateTarget = (key, target) => {
+
+  const updateTarget = (key, target) =>
     setSetup((s) => ({
       ...s,
       zikar: { ...s.zikar, items: s.zikar.items.map((i) => i.key === key ? { ...i, target } : i) },
     }));
-  };
+
   return (
     <ScrollView style={styles.stepScroll} showsVerticalScrollIndicator={false}>
-      <StepHeader title="Zikar" arabic="الذِّكْر" subtitle="Select the remembrances you'd like to count each day." />
+      <StepHeader
+        title="Zikar"
+        arabic="الذِّكْر"
+        subtitle="Build your daily remembrance list. Start with Allahu Akbar and add more."
+      />
+
       {setup.zikar.items.map((item) => (
         <SectionCard key={item.key}>
           <View style={styles.zikarItemHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.zikarArabic}>{item.arabic}</Text>
+              {item.arabic ? <Text style={styles.zikarArabic}>{item.arabic}</Text> : null}
               <Text style={styles.zikarLabel}>{item.label}</Text>
+              {item.meaning ? <Text style={styles.zikarMeaning}>{item.meaning}</Text> : null}
             </View>
             <Switch
               value={item.enabled}
@@ -268,6 +318,12 @@ function ZikarStep({ setup, setSetup }) {
               trackColor={{ false: COLORS.parchmentDeep, true: COLORS.sage }}
               thumbColor={COLORS.white}
             />
+            {/* Allow removing any item except the last one */}
+            {setup.zikar.items.length > 1 && (
+              <TouchableOpacity onPress={() => removeItem(item.key)} style={zk.removeBtn}>
+                <Text style={zk.removeBtnText}>×</Text>
+              </TouchableOpacity>
+            )}
           </View>
           {item.enabled && (
             <View style={styles.zikarTarget}>
@@ -277,9 +333,126 @@ function ZikarStep({ setup, setSetup }) {
           )}
         </SectionCard>
       ))}
+
+      {/* Add Zikar button */}
+      <TouchableOpacity style={zk.addBtn} onPress={() => { setPickerMode('catalog'); setShowPicker(true); }}>
+        <Text style={zk.addBtnText}>+ Add Zikar</Text>
+      </TouchableOpacity>
+
+      {/* Picker Modal */}
+      <Modal visible={showPicker} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowPicker(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={zk.modalContainer}>
+            {/* Modal header */}
+            <View style={zk.modalHeader}>
+              <Text style={zk.modalTitle}>Add Zikar</Text>
+              <TouchableOpacity onPress={() => setShowPicker(false)}>
+                <Text style={zk.modalClose}>Done</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tab switcher */}
+            <View style={zk.tabs}>
+              <TouchableOpacity
+                style={[zk.tab, pickerMode === 'catalog' && zk.tabActive]}
+                onPress={() => setPickerMode('catalog')}
+              >
+                <Text style={[zk.tabText, pickerMode === 'catalog' && zk.tabTextActive]}>From Catalog</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[zk.tab, pickerMode === 'custom' && zk.tabActive]}
+                onPress={() => setPickerMode('custom')}
+              >
+                <Text style={[zk.tabText, pickerMode === 'custom' && zk.tabTextActive]}>Custom</Text>
+              </TouchableOpacity>
+            </View>
+
+            {pickerMode === 'catalog' ? (
+              <FlatList
+                data={availableCatalog}
+                keyExtractor={(item) => item.key}
+                contentContainerStyle={{ paddingBottom: 32 }}
+                ListEmptyComponent={
+                  <Text style={zk.emptyText}>You've added all available azkar!</Text>
+                }
+                ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: COLORS.divider }} />}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={zk.catalogItem} onPress={() => addFromCatalog(item)} activeOpacity={0.7}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={zk.catalogArabic}>{item.arabic}</Text>
+                      <Text style={zk.catalogLabel}>{item.label}</Text>
+                      <Text style={zk.catalogMeaning}>{item.meaning} · {item.defaultTarget}×</Text>
+                    </View>
+                    <Text style={zk.catalogAdd}>Add</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            ) : (
+              <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+                <Text style={styles.fieldLabel}>Name</Text>
+                <TextInput
+                  style={zk.input}
+                  placeholder="e.g. Salawat, Istighfar…"
+                  placeholderTextColor={COLORS.textLight}
+                  value={customName}
+                  onChangeText={setCustomName}
+                />
+                <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Arabic (optional)</Text>
+                <TextInput
+                  style={[zk.input, { textAlign: 'right', fontSize: 20 }]}
+                  placeholder="اكتب هنا"
+                  placeholderTextColor={COLORS.textLight}
+                  value={customArabic}
+                  onChangeText={setCustomArabic}
+                />
+                <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Daily target</Text>
+                <View style={{ marginTop: 4 }}>
+                  <Stepper value={customTarget} onChange={setCustomTarget} min={1} max={999} />
+                </View>
+                <TouchableOpacity
+                  style={[zk.addConfirmBtn, !customName.trim() && { opacity: 0.4 }]}
+                  onPress={addCustom}
+                  disabled={!customName.trim()}
+                >
+                  <Text style={zk.addConfirmText}>Add to My Zikar</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScrollView>
   );
 }
+
+const zk = StyleSheet.create({
+  removeBtn:     { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(200,90,90,0.1)', justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
+  removeBtnText: { fontSize: 18, color: '#C85A5A', lineHeight: 22 },
+  addBtn:        { borderWidth: 1.5, borderColor: COLORS.sage, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginBottom: 20 },
+  addBtnText:    { fontSize: 15, color: COLORS.sage, fontWeight: '600' },
+
+  modalContainer: { flex: 1, backgroundColor: COLORS.parchment },
+  modalHeader:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.divider },
+  modalTitle:     { fontSize: 20, fontWeight: '700', color: COLORS.textDark },
+  modalClose:     { fontSize: 16, color: COLORS.sage, fontWeight: '600' },
+
+  tabs:         { flexDirection: 'row', marginHorizontal: 20, marginVertical: 12, backgroundColor: COLORS.parchmentDeep, borderRadius: 12, padding: 3 },
+  tab:          { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+  tabActive:    { backgroundColor: COLORS.white },
+  tabText:      { fontSize: 14, color: COLORS.textLight, fontWeight: '500' },
+  tabTextActive:{ fontSize: 14, color: COLORS.textDark, fontWeight: '600' },
+
+  catalogItem:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
+  catalogArabic: { fontSize: 20, color: COLORS.textDark, lineHeight: 28 },
+  catalogLabel:  { fontSize: 15, color: COLORS.textDark, fontWeight: '600' },
+  catalogMeaning:{ fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  catalogAdd:    { fontSize: 14, color: COLORS.sage, fontWeight: '600', paddingLeft: 12 },
+  emptyText:     { textAlign: 'center', color: COLORS.textLight, fontSize: 14, margin: 40 },
+
+  input:          { backgroundColor: COLORS.parchmentDeep, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: COLORS.textDark, borderWidth: 1, borderColor: COLORS.divider },
+  addConfirmBtn:  { marginTop: 28, backgroundColor: COLORS.sage, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  addConfirmText: { color: 'white', fontSize: 16, fontWeight: '600' },
+});
 
 function SadaqaStep({ setup, setSetup }) {
   const update = (field, val) => setSetup((s) => ({ ...s, sadaqa: { ...s.sadaqa, [field]: val } }));
@@ -313,47 +486,58 @@ function SadaqaStep({ setup, setSetup }) {
 }
 
 function LocationStep({ setup, setSetup }) {
-  const [loading, setLoading] = useState(false);
+  const [gpsLoading, setGpsLoading]   = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching]     = useState(false);
+
   const updateAzan = (field, val) => setSetup((s) => ({ ...s, azan: { ...s.azan, [field]: val } }));
-
-  const handleFetchLocation = async () => {
-    setLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLoading(false);
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const [place] = await Location.reverseGeocodeAsync({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      }).catch(() => [null]);
-      const locationName = place
-        ? `${place.city ?? place.district ?? ''}, ${place.country ?? ''}`.trim().replace(/^,\s*/, '')
-        : null;
-      setSetup((s) => ({
-        ...s,
-        azan: {
-          ...s.azan,
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-          locationName,
-        },
-      }));
-    } catch (e) {
-      console.warn('Location fetch error:', e);
-    }
-    setLoading(false);
-  };
-
   const azan = setup.azan ?? DEFAULT_SETTINGS.azan;
 
+  const handleGPS = async () => {
+    setGpsLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') { setGpsLoading(false); return; }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const [place] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }).catch(() => [null]);
+      const locationName = place
+        ? `${place.city ?? place.district ?? ''}, ${place.country ?? ''}`.trim().replace(/^,\s*/, '')
+        : `${loc.coords.latitude.toFixed(4)}, ${loc.coords.longitude.toFixed(4)}`;
+      setSetup((s) => ({ ...s, azan: { ...s.azan, latitude: loc.coords.latitude, longitude: loc.coords.longitude, locationName } }));
+      setSearchResults([]);
+    } catch (e) { console.warn('Location fetch error:', e); }
+    setGpsLoading(false);
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    setSearchResults([]);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery.trim())}&format=json&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'SoulHealthApp/1.0' } }
+      );
+      setSearchResults(await res.json());
+    } catch { /* silent fail */ }
+    setSearching(false);
+  };
+
+  const handleResultSelect = (item) => {
+    const city    = item.address?.city ?? item.address?.town ?? item.address?.village ?? '';
+    const country = item.address?.country ?? '';
+    const name    = [city, country].filter(Boolean).join(', ') || item.display_name;
+    setSetup((s) => ({ ...s, azan: { ...s.azan, latitude: parseFloat(item.lat), longitude: parseFloat(item.lon), locationName: name } }));
+    setSearchResults([]);
+    setSearchQuery('');
+  };
+
   return (
-    <ScrollView style={styles.stepScroll} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.stepScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <StepHeader
         title="Azan Notifications"
-        subtitle="Get precise prayer time alerts based on your location. Soul Health calculates times using astronomical formulas — no internet needed."
+        subtitle="Get precise prayer time alerts based on your location. Calculated offline — no internet needed after setup."
       />
 
       <SectionCard>
@@ -375,29 +559,76 @@ function LocationStep({ setup, setSetup }) {
         <>
           <SectionCard>
             <Text style={styles.fieldLabel}>Your Location</Text>
+
+            {/* Current location badge */}
             {azan.latitude ? (
               <View style={styles.locationBox}>
                 <Text style={styles.locationText}>
                   📍 {azan.locationName ?? `${azan.latitude.toFixed(4)}, ${azan.longitude.toFixed(4)}`}
                 </Text>
-                <TouchableOpacity style={styles.locUpdateBtn} onPress={handleFetchLocation}>
-                  <Text style={styles.locUpdateText}>Update</Text>
-                </TouchableOpacity>
               </View>
-            ) : (
-              <TouchableOpacity
-                style={[styles.locFetchBtn, loading && { opacity: 0.6 }]}
-                onPress={handleFetchLocation}
-                disabled={loading}
-              >
-                {loading
-                  ? <ActivityIndicator color="white" size="small" />
-                  : <Text style={styles.locFetchText}>📍  Get My Location</Text>}
+            ) : null}
+
+            {/* GPS button */}
+            <TouchableOpacity
+              style={[styles.locFetchBtn, gpsLoading && { opacity: 0.6 }, azan.latitude && { marginTop: 10, backgroundColor: 'transparent', borderWidth: 1.5, borderColor: COLORS.sage }]}
+              onPress={handleGPS}
+              disabled={gpsLoading}
+            >
+              {gpsLoading
+                ? <ActivityIndicator color={azan.latitude ? COLORS.sage : 'white'} size="small" />
+                : <Text style={[styles.locFetchText, azan.latitude && { color: COLORS.sage }]}>
+                    {azan.latitude ? 'Use GPS Instead' : '📍  Use My Current Location'}
+                  </Text>}
+            </TouchableOpacity>
+
+            {/* Search divider */}
+            <View style={loc.dividerRow}>
+              <View style={loc.dividerLine} />
+              <Text style={loc.dividerText}>or search by city</Text>
+              <View style={loc.dividerLine} />
+            </View>
+
+            {/* City search */}
+            <View style={loc.searchRow}>
+              <TextInput
+                style={loc.input}
+                placeholder="City name…"
+                placeholderTextColor={COLORS.textLight}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+              <TouchableOpacity style={loc.searchBtn} onPress={handleSearch} disabled={searching}>
+                {searching
+                  ? <ActivityIndicator size="small" color="white" />
+                  : <Text style={loc.searchBtnText}>Search</Text>}
               </TouchableOpacity>
-            )}
-            {!azan.latitude && (
+            </View>
+
+            {/* Results */}
+            {searchResults.map((item) => {
+              const city    = item.address?.city ?? item.address?.town ?? item.address?.village ?? '';
+              const country = item.address?.country ?? '';
+              const name    = [city, country].filter(Boolean).join(', ') || item.display_name;
+              return (
+                <TouchableOpacity
+                  key={item.place_id?.toString() ?? item.display_name}
+                  style={loc.resultItem}
+                  onPress={() => handleResultSelect(item)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={loc.resultName}>{name}</Text>
+                  <Text style={loc.resultDetail} numberOfLines={1}>{item.display_name}</Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            {!azan.latitude && searchResults.length === 0 && (
               <Text style={styles.hint}>
-                One-time GPS fetch. Used only to calculate prayer times. Not shared or stored remotely.
+                GPS is one-time only. Used to calculate prayer times. Not shared or stored remotely.
               </Text>
             )}
           </SectionCard>
@@ -440,13 +671,24 @@ function LocationStep({ setup, setSetup }) {
       )}
 
       {!azan.enabled && (
-        <Text style={styles.hint}>
-          You can enable Azan notifications anytime from Settings.
-        </Text>
+        <Text style={styles.hint}>You can enable Azan notifications anytime from Settings.</Text>
       )}
     </ScrollView>
   );
 }
+
+const loc = StyleSheet.create({
+  dividerRow:  { flexDirection: 'row', alignItems: 'center', marginVertical: 12, gap: 8 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.divider },
+  dividerText: { fontSize: 12, color: COLORS.textLight, fontWeight: '500' },
+  searchRow:   { flexDirection: 'row', gap: 8, marginBottom: 4 },
+  input:       { flex: 1, backgroundColor: COLORS.parchmentDeep, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: COLORS.textDark, borderWidth: 1, borderColor: COLORS.divider },
+  searchBtn:   { backgroundColor: COLORS.gold, borderRadius: 10, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  searchBtnText: { color: 'white', fontSize: 13, fontWeight: '600' },
+  resultItem:  { paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.divider },
+  resultName:  { fontSize: 15, color: COLORS.textDark, fontWeight: '600' },
+  resultDetail:{ fontSize: 11, color: COLORS.textLight, marginTop: 1 },
+});
 
 function SummaryStep({ setup }) {
   const weights = computeWeights(setup);
@@ -504,7 +746,11 @@ export default function OnboardingFlow() {
   const [setup, setSetup] = useState({
     prayer: { ...DEFAULT_SETTINGS.prayer },
     quran:  { ...DEFAULT_SETTINGS.quran  },
-    zikar:  { ...DEFAULT_SETTINGS.zikar, items: ZIKAR_PRESETS.map((z) => ({ ...z, enabled: true })) },
+    zikar:  {
+      ...DEFAULT_SETTINGS.zikar,
+      // Start with only Allahu Akbar; user adds more during onboarding
+      items: [{ key: 'allahuakbar', label: 'Allahu Akbar', arabic: 'ٱللَّهُ أَكْبَرُ', meaning: 'Allah is the Greatest', target: 34, enabled: true }],
+    },
     sadaqa: { ...DEFAULT_SETTINGS.sadaqa },
     azan:   { ...DEFAULT_SETTINGS.azan   },
   });
@@ -623,6 +869,7 @@ const styles = StyleSheet.create({
   zikarItemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   zikarArabic:     { fontSize: 22, color: COLORS.textDark, lineHeight: 30 },
   zikarLabel:      { fontSize: 13, color: COLORS.textMid },
+  zikarMeaning:    { fontSize: 11, color: COLORS.textLight, marginTop: 1 },
   zikarTarget:     { marginTop: 12, borderTopWidth: 1, borderTopColor: COLORS.divider, paddingTop: 12 },
 
   locationBox:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(107,143,113,0.1)', borderRadius: 12, padding: 12, marginTop: 4 },

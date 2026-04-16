@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  Modal, FlatList, TextInput,
+  Modal, FlatList, TextInput, useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Line } from 'react-native-svg';
@@ -276,6 +276,8 @@ const bk = StyleSheet.create({
 // ─── Main screen ───────────────────────────────────────────────────────────────
 
 export default function QuranScreen() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const { record, setQuranAmount } = useHealth();
   const { settings, updateSettings } = useSettings();
   const { bookmark, updateBookmark, removeBookmark } = useQuranBookmark();
@@ -320,7 +322,7 @@ export default function QuranScreen() {
 
   return (
     <View style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, isTablet && { maxWidth: 600, alignSelf: 'center', width: '100%' }]} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
           <Text style={styles.title}>Quran</Text>

@@ -14,6 +14,8 @@
       "bundleIdentifier": "com.soulhealth.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Soul Health needs your location once to calculate precise prayer times for Azan notifications.",
+        "NSCalendarsUsageDescription": "Soul Health adds your daily prayer times to your calendar so you can plan around them.",
+        "NSRemindersUsageDescription": "Soul Health adds your prayer times as tasks so you can track and check them off in Google Tasks or Apple Reminders.",
         "UIBackgroundModes": ["fetch", "remote-notification"]
       }
     },
@@ -27,7 +29,9 @@
         "ACCESS_COARSE_LOCATION",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "SCHEDULE_EXACT_ALARM"
+        "SCHEDULE_EXACT_ALARM",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
       ]
     },
     "plugins": [
@@ -41,6 +45,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Soul Health needs your location once to calculate precise prayer times for Azan notifications."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Soul Health adds your daily prayer times to your calendar so you can plan around them."
         }
       ]
     ]

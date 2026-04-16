@@ -1,49 +1,51 @@
 export const COLORS = {
-  // Backgrounds
-  parchment: '#F5F0E8',
-  parchmentDark: '#EDE5D0',
-  parchmentDeep: '#E0D5C0',
+  // ── Backgrounds ────────────────────────────────────────────────────────────
+  parchment:     '#F8F5FE',   // barely-there lavender white
+  parchmentDark: '#EDE8FA',   // soft lavender
+  parchmentDeep: '#DDD5F2',   // medium lavender
 
-  // Brand
-  sage: '#6B8F71',
-  sageLight: '#9BB89F',
-  sageDark: '#4A7050',
+  // ── Primary — soft iris / violet ───────────────────────────────────────────
+  sage:      '#8B76D6',   // main purple (buttons, tab active, highlights)
+  sageLight: '#B4A8E8',
+  sageDark:  '#6555B8',
 
-  gold: '#C9A96E',
-  goldLight: '#E8C987',
-  goldDark: '#A8844A',
-  goldBright: '#F0D060',
+  // ── Accent — warm peach ────────────────────────────────────────────────────
+  gold:      '#F0906A',   // warm peach-orange
+  goldLight: '#F8BFA8',
+  goldDark:  '#C86040',
+  goldBright:'#F0D060',   // warm yellow (streaks, stars)
 
-  // Text
-  textDark: '#3A3035',
-  textMid: '#6B5F64',
-  textLight: '#9E9299',
-  textGold: '#8A6A30',
+  // ── Text ───────────────────────────────────────────────────────────────────
+  textDark:  '#221D3E',   // deep indigo
+  textMid:   '#6B648E',
+  textLight: '#A49EC0',
+  textGold:  '#8B76D6',   // purple — used for Arabic & brand text
 
-  // UI
-  white: '#FFFFFF',
-  offWhite: '#FDFAF4',
-  surface: 'rgba(255,252,245,0.85)',
-  divider: 'rgba(58,48,53,0.12)',
-  overlay: 'rgba(58,48,53,0.35)',
+  // ── UI chrome ──────────────────────────────────────────────────────────────
+  white:    '#FFFFFF',
+  offWhite: '#FCF9FF',
+  surface:  'rgba(252,249,255,0.93)',
+  divider:  'rgba(34,29,62,0.10)',
+  overlay:  'rgba(34,29,62,0.42)',
 
-  // States
-  prayer: '#7A8FA8',
-  quran: '#8A9A6A',
-  zikar: '#A87A60',
+  // ── Semantic state colours ─────────────────────────────────────────────────
+  prayer: '#6888C8',   // periwinkle blue
+  quran:  '#68A880',   // sage-mint green
+  zikar:  '#C868A8',   // dusty rose / mauve
+  sadaqa: '#C89068',   // warm amber
 
-  // Onboarding pastel section backgrounds
-  prayerBg:   '#FFF0F0',
-  quranBg:    '#F0F4FD',
-  zikarBg:    '#F0FAF3',
-  sadaqaBg:   '#FDF8F0',
-  locationBg: '#F4F0FD',
+  // ── Onboarding pastel section backgrounds ──────────────────────────────────
+  prayerBg:   '#EEF2FA',
+  quranBg:    '#EEF7F2',
+  zikarBg:    '#F7EEFC',
+  sadaqaBg:   '#FAF3EE',
+  locationBg: '#EEEAFA',
 
-  // Character states
-  witheredRobe: '#9A9A9A',
-  witheredSkin: '#C8B8B0',
-  neutralRobe: '#8FA68E',
-  neutralSkin: '#DCC8A8',
-  radiantRobe: '#5A8060',
-  radiantSkin: '#F0D5A8',
+  // ── Soul-character state colours ───────────────────────────────────────────
+  witheredRobe: '#9A9AA8',
+  witheredSkin: '#C8B8B8',
+  neutralRobe:  '#8B76D6',
+  neutralSkin:  '#E8DCF8',
+  radiantRobe:  '#6555B8',
+  radiantSkin:  '#F8DDD0',
 };

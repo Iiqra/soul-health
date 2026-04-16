@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  Modal, TextInput, Alert,
+  Modal, TextInput, Alert, useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -215,6 +215,8 @@ const wd = StyleSheet.create({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function SadaqaScreen() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const { record, history, addSadaqaEntry, deleteSadaqaEntry } = useHealth();
   const { settings } = useSettings();
   const [showModal, setShowModal] = useState(false);
@@ -251,7 +253,7 @@ export default function SadaqaScreen() {
 
   return (
     <View style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, isTablet && { maxWidth: 600, alignSelf: 'center', width: '100%' }]} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
           <Text style={styles.title}>Sadaqa</Text>

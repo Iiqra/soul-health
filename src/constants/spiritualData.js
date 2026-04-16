@@ -6,6 +6,20 @@ export const PRAYERS = [
   { key: 'isha',    name: 'Isha',    arabic: 'العشاء', time: 'Night'     },
 ];
 
+// Full catalog used in "Add Zikar" picker — superset of ZIKAR_PRESETS
+export const AZKAR_CATALOG = [
+  { key: 'subhanallah',    label: 'Subhanallah',          arabic: 'سُبْحَانَ ٱللَّهِ',                          meaning: 'Glory be to Allah',                  defaultTarget: 33  },
+  { key: 'alhamdulillah',  label: 'Alhamdulillah',        arabic: 'ٱلْحَمْدُ لِلَّهِ',                         meaning: 'All praise is due to Allah',          defaultTarget: 33  },
+  { key: 'allahuakbar',    label: 'Allahu Akbar',         arabic: 'ٱللَّهُ أَكْبَرُ',                          meaning: 'Allah is the Greatest',               defaultTarget: 34  },
+  { key: 'astaghfirullah', label: 'Astaghfirullah',       arabic: 'أَسْتَغْفِرُ ٱللَّهَ',                      meaning: 'I seek forgiveness of Allah',         defaultTarget: 100 },
+  { key: 'laailaha',       label: 'La ilaha illallah',    arabic: 'لَا إِلَٰهَ إِلَّا ٱللَّهُ',               meaning: 'There is no god but Allah',           defaultTarget: 100 },
+  { key: 'salawat',        label: 'Salawat',              arabic: 'ٱللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ',         meaning: 'Blessings upon the Prophet ﷺ',        defaultTarget: 10  },
+  { key: 'hauqalah',       label: 'Hauqalah',             arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِٱللَّهِ', meaning: 'No power except with Allah',          defaultTarget: 33  },
+  { key: 'bismillah',      label: 'Bismillah',            arabic: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',   meaning: 'In the name of Allah',                defaultTarget: 21  },
+  { key: 'hasbunallah',    label: 'Hasbunallah',          arabic: 'حَسْبُنَا ٱللَّهُ وَنِعْمَ ٱلْوَكِيلُ',    meaning: 'Allah is sufficient for us',          defaultTarget: 7   },
+  { key: 'ya_hayyu',       label: "Yaa Hayyu Yaa Qayyum", arabic: 'يَا حَيُّ يَا قَيُّومُ',                   meaning: 'O Ever-Living, O Self-Sustaining',    defaultTarget: 40  },
+];
+
 export const ZIKAR_PRESETS = [
   {
     key: 'subhanallah',

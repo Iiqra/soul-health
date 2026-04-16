@@ -17,6 +17,7 @@ import OnboardingFlow  from './src/screens/OnboardingFlow';
 import HomeScreen      from './src/screens/HomeScreen';
 import PrayersScreen   from './src/screens/PrayersScreen';
 import QuranScreen     from './src/screens/QuranScreen';
+import ZikarListScreen from './src/screens/ZikarListScreen';
 import ZikarScreen     from './src/screens/ZikarScreen';
 import SadaqaScreen    from './src/screens/SadaqaScreen';
 import JourneyScreen   from './src/screens/JourneyScreen';
@@ -34,9 +35,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const Tab       = createBottomTabNavigator();
-const HomeStack = createStackNavigator();
-const RootStack = createStackNavigator();
+const Tab        = createBottomTabNavigator();
+const HomeStack  = createStackNavigator();
+const ZikarStack = createStackNavigator();
+const RootStack  = createStackNavigator();
 
 function HomeStackNavigator() {
   return (
@@ -48,6 +50,15 @@ function HomeStackNavigator() {
   );
 }
 
+function ZikarStackNavigator() {
+  return (
+    <ZikarStack.Navigator screenOptions={{ headerShown: false }}>
+      <ZikarStack.Screen name="ZikarList"    component={ZikarListScreen} />
+      <ZikarStack.Screen name="ZikarCounter" component={ZikarScreen}     />
+    </ZikarStack.Navigator>
+  );
+}
+
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -55,7 +66,7 @@ function MainTabs() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: COLORS.parchment,
-          borderTopColor: 'rgba(201,169,110,0.28)',
+          borderTopColor: 'rgba(139,118,214,0.22)',
           borderTopWidth: 1,
           height: 64,
           paddingBottom: 8,
@@ -72,7 +83,7 @@ function MainTabs() {
       <Tab.Screen name="Home"    component={HomeStackNavigator} options={{ tabBarLabel: 'Home'    }} />
       <Tab.Screen name="Prayers" component={PrayersScreen}      options={{ tabBarLabel: 'Prayers' }} />
       <Tab.Screen name="Quran"   component={QuranScreen}        options={{ tabBarLabel: 'Quran'   }} />
-      <Tab.Screen name="Zikar"   component={ZikarScreen}        options={{ tabBarLabel: 'Zikar'   }} />
+      <Tab.Screen name="Zikar"   component={ZikarStackNavigator} options={{ tabBarLabel: 'Zikar'   }} />
       <Tab.Screen name="Sadaqa"  component={SadaqaScreen}       options={{ tabBarLabel: 'Sadaqa'  }} />
     </Tab.Navigator>
   );

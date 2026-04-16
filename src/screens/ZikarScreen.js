@@ -1,158 +1,98 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Animated, Alert, TouchableOpacity,
+  View, Text, StyleSheet, Pressable, Animated, Alert,
+  TouchableOpacity, useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useHealth } from '../context/HealthContext';
 import { useSettings } from '../context/SettingsContext';
 import { COLORS } from '../constants/colors';
 
-// Sequential order — always shown in this sequence
-const ZIKAR_ORDER = ['subhanallah', 'alhamdulillah', 'allahuakbar'];
-
 const TINTS = [
-  { color: '#7A8FA8', bg: 'rgba(122,143,168,0.11)' },
-  { color: '#8A9A6A', bg: 'rgba(138,154,106,0.11)' },
-  { color: '#A87A60', bg: 'rgba(168,122,96,0.11)'  },
+  { color: '#8B76D6', bg: 'rgba(139,118,214,0.11)' },
+  { color: '#68A880', bg: 'rgba(104,168,128,0.11)' },
+  { color: '#C868A8', bg: 'rgba(200,104,168,0.11)' },
+  { color: '#6888C8', bg: 'rgba(104,136,200,0.11)' },
+  { color: '#F0906A', bg: 'rgba(240,144,106,0.11)' },
+  { color: '#9068C8', bg: 'rgba(144,104,200,0.11)' },
 ];
 
-// ─── Volume button increment ───────────────────────────────────────────────────
-// Hardware volume-key events are not available in Expo managed workflow.
-// To enable this feature: eject to bare workflow and install
-// react-native-volume-manager, then call VolumeManager.addVolumeListener()
-// when the Zikar tab is focused and remove it on blur.
-// ─────────────────────────────────────────────────────────────────────────────
+export default function ZikarScreen({ route, navigation }) {
+  const zikarKey = route?.params?.zikarKey;
 
-export default function ZikarScreen() {
   const { record, incrementZikar, resetZikar } = useHealth();
   const { settings } = useSettings();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim  = useRef(new Animated.Value(1)).current;
 
-  // Ordered list of enabled zikar keys in canonical sequence
-  const sequence = useMemo(() => {
-    if (!settings) return [];
-    return ZIKAR_ORDER.filter(k =>
-      settings.zikar.items.some(i => i.key === k && i.enabled)
-    );
-  }, [settings]);
+  const item = settings?.zikar?.items?.find(i => i.key === zikarKey);
 
-  const clampedIndex = Math.min(activeIndex, Math.max(0, sequence.length - 1));
+  // Pick a stable tint based on position in items array
+  const itemIndex = settings?.zikar?.items?.findIndex(i => i.key === zikarKey) ?? 0;
+  const tint = TINTS[Math.max(itemIndex, 0) % TINTS.length];
 
-  // ── Tap handler ────────────────────────────────────────────────────────────
+  const count      = record?.zikar?.[zikarKey] ?? 0;
+  const pct        = item ? Math.min(count / item.target, 1) : 0;
+  const isComplete = item ? count >= item.target : false;
+
+  // ── Tap ────────────────────────────────────────────────────────────────────
   const handleTap = useCallback(() => {
-    if (!record || !settings || sequence.length === 0) return;
+    if (!record || !item) return;
 
-    // If everything is already done, just give a gentle tap response
-    const isAllDone = sequence.every(k => {
-      const it = settings.zikar.items.find(i => i.key === k);
-      return (record.zikar[k] ?? 0) >= (it?.target ?? 33);
-    });
-    if (isAllDone) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      return;
-    }
-
-    const key  = sequence[clampedIndex];
-    const item = settings.zikar.items.find(i => i.key === key);
-    if (!item) return;
-
-    const count  = record.zikar[key] ?? 0;
-    const isLast = clampedIndex === sequence.length - 1;
-
-    // The exact moment we hit the target — triggers transition / completion
     const willHitTarget = count + 1 === item.target;
+    incrementZikar(zikarKey);
 
-    incrementZikar(key);
-
-    if (willHitTarget && !isLast) {
-      // ── Transition to next zikar ──────────────────────────────────────────
-      // Unique, stronger haptic distinguishes this from a normal tap
+    if (willHitTarget) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 170, useNativeDriver: true }),
-        Animated.timing(fadeAnim, { toValue: 1, duration: 290, useNativeDriver: true }),
-      ]).start();
-      setActiveIndex(clampedIndex + 1);
-
-    } else if (willHitTarget && isLast) {
-      // ── Final completion ──────────────────────────────────────────────────
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Animated.sequence([
-        Animated.timing(scaleAnim, { toValue: 1.08, duration: 90,  useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 1.07, duration: 90,  useNativeDriver: true }),
         Animated.timing(scaleAnim, { toValue: 1,    duration: 230, useNativeDriver: true }),
       ]).start();
-
     } else {
-      // ── Normal tap ────────────────────────────────────────────────────────
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       Animated.sequence([
         Animated.timing(scaleAnim, { toValue: 0.96, duration: 55,  useNativeDriver: true }),
         Animated.timing(scaleAnim, { toValue: 1,    duration: 110, useNativeDriver: true }),
       ]).start();
     }
-  }, [record, settings, sequence, clampedIndex, incrementZikar, scaleAnim, fadeAnim]);
+  }, [record, item, count, zikarKey, incrementZikar, scaleAnim]);
 
-  // ── Reset handler ──────────────────────────────────────────────────────────
+  // ── Reset ──────────────────────────────────────────────────────────────────
   const handleReset = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Alert.alert('Reset Zikar', 'Reset all counts to zero?', [
+    Alert.alert('Reset', `Reset ${item?.label ?? 'zikar'} count to zero?`, [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Reset All', style: 'destructive',
+        text: 'Reset', style: 'destructive',
         onPress: () => {
-          sequence.forEach(k => resetZikar(k));
-          fadeAnim.setValue(1);
+          resetZikar(zikarKey);
           scaleAnim.setValue(1);
-          setActiveIndex(0);
+          fadeAnim.setValue(1);
         },
       },
     ]);
-  }, [sequence, resetZikar, fadeAnim, scaleAnim]);
+  }, [item, zikarKey, resetZikar, scaleAnim, fadeAnim]);
 
-  // ── Dot navigation (immediate snap, no animation carry-over) ──────────────
-  const navigateToStep = useCallback((i) => {
-    fadeAnim.setValue(1);
-    scaleAnim.setValue(1);
-    setActiveIndex(i);
-  }, [fadeAnim, scaleAnim]);
+  if (!record || !settings || !item) return null;
 
-  // ── Early exits ───────────────────────────────────────────────────────────
-  if (!record || !settings) return null;
-
-  if (sequence.length === 0) {
-    return (
-      <View style={styles.safe}>
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>No zikar enabled. Enable some in Settings.</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // ── Derived display values ─────────────────────────────────────────────────
-  const key    = sequence[clampedIndex];
-  const item   = settings.zikar.items.find(i => i.key === key);
-  const count  = record.zikar[key] ?? 0;
-  const tint   = TINTS[clampedIndex % TINTS.length];
-  const pct    = Math.min(count / item.target, 1);
-  const isComplete = count >= item.target;
-
-  const allDone = sequence.every(k => {
-    const it = settings.zikar.items.find(i => i.key === k);
-    return (record.zikar[k] ?? 0) >= (it?.target ?? 33);
-  });
+  const circleSize = isTablet ? 240 : 200;
 
   return (
     <View style={styles.safe}>
 
       {/* ── Header ── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Zikar</Text>
-          <Text style={styles.titleAr}>الذِّكْر</Text>
-        </View>
+      <View style={[styles.header, isTablet && { maxWidth: 600, alignSelf: 'center', width: '100%' }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+        >
+          <Text style={styles.backArrow}>‹</Text>
+          <Text style={styles.backLabel}>All Zikar</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={handleReset}
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
@@ -161,101 +101,69 @@ export default function ZikarScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Step dots ── */}
-      <View style={styles.dotsRow}>
-        {sequence.map((k, i) => {
-          const si   = settings.zikar.items.find(si => si.key === k);
-          const cnt  = record.zikar[k] ?? 0;
-          const done = cnt >= (si?.target ?? 33);
-          const isActive = i === clampedIndex;
-          const tc = TINTS[i % 3].color;
-          return (
-            <TouchableOpacity
-              key={k}
-              onPress={() => navigateToStep(i)}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <View style={[
-                styles.dot,
-                isActive && { width: 28, backgroundColor: tc, borderRadius: 5 },
-                !isActive && done && { backgroundColor: tc, opacity: 0.40 },
-              ]} />
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
       {/* ── Full-screen tap area ── */}
-      <Pressable style={styles.tapArea} onPress={handleTap}>
-        <Animated.View style={[
-          styles.inner,
-          { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-        ]}>
+      <Pressable
+        style={[styles.tapArea, isTablet && { maxWidth: 600, alignSelf: 'center', width: '100%' }]}
+        onPress={handleTap}
+      >
+        <Animated.View style={[styles.inner, { transform: [{ scale: scaleAnim }] }]}>
 
-          {allDone ? (
-            /* ── Completion celebration ── */
+          {isComplete && count >= item.target ? (
+            /* ── Completion state ── */
             <View style={styles.completedBox}>
               <Text style={styles.completedStar}>✦</Text>
               <Text style={styles.completedTitle}>MashaAllah!</Text>
-              <Text style={styles.completedSub}>All zikar complete for today</Text>
-              <Text style={styles.completedQuote}>
-                "Remember Me, and I will remember you."
-              </Text>
-              <Text style={styles.completedRef}>— Quran 2:152</Text>
-            </View>
-
-          ) : (
-            /* ── Active zikar display ── */
-            <>
-              {/* Arabic in a soft halo circle */}
-              <View style={[
-                styles.arabicCircle,
-                { backgroundColor: tint.bg, borderColor: tint.color + '50' },
-              ]}>
+              <Text style={[styles.completedSub, { color: tint.color }]}>{item.label} complete</Text>
+              <View style={[styles.arabicCircle, { backgroundColor: tint.bg, borderColor: tint.color + '50', width: circleSize, height: circleSize, borderRadius: circleSize / 2, marginTop: 20 }]}>
                 <Text style={styles.arabic}>{item.arabic}</Text>
               </View>
-
-              <Text style={styles.label}>{item.label}</Text>
-              <Text style={styles.meaning}>{item.meaning}</Text>
-
-              {/* Big counter */}
               <View style={styles.countRow}>
                 <Text style={[styles.count, { color: tint.color }]}>{count}</Text>
                 <Text style={styles.countOf}>/{item.target}</Text>
               </View>
+              <Text style={styles.hint}>tap to continue</Text>
+            </View>
+          ) : (
+            /* ── Active counter ── */
+            <>
+              {/* Arabic halo circle */}
+              <View style={[
+                styles.arabicCircle,
+                {
+                  backgroundColor: tint.bg,
+                  borderColor: tint.color + '50',
+                  width: circleSize,
+                  height: circleSize,
+                  borderRadius: circleSize / 2,
+                },
+              ]}>
+                <Text style={[styles.arabic, isTablet && { fontSize: 46 }]}>{item.arabic}</Text>
+              </View>
 
-              {isComplete ? (
-                <View style={[styles.doneBadge, { borderColor: tint.color }]}>
-                  <Text style={[styles.doneText, { color: tint.color }]}>
-                    {clampedIndex < sequence.length - 1
-                      ? 'Complete ✓  tap to keep going'
-                      : 'Complete ✓  keep going'}
-                  </Text>
-                </View>
-              ) : (
-                <Text style={styles.hint}>tap anywhere to count</Text>
-              )}
+              <Text style={[styles.label, isTablet && { fontSize: 22 }]}>{item.label}</Text>
+              <Text style={styles.meaning}>{item.meaning}</Text>
+
+              {/* Counter */}
+              <View style={styles.countRow}>
+                <Text style={[styles.count, { color: tint.color }, isTablet && { fontSize: 88 }]}>{count}</Text>
+                <Text style={styles.countOf}>/{item.target}</Text>
+              </View>
+
+              <Text style={styles.hint}>tap anywhere to count</Text>
             </>
           )}
-
         </Animated.View>
       </Pressable>
 
-      {/* ── Progress bar (flush at bottom of tap area) ── */}
-      {!allDone && (
-        <View style={styles.progressTrack}>
-          <View style={[
-            styles.progressFill,
-            { width: `${pct * 100}%`, backgroundColor: tint.color },
-          ]} />
-        </View>
-      )}
+      {/* ── Progress bar ── */}
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${pct * 100}%`, backgroundColor: tint.color }]} />
+      </View>
 
       {/* ── Footer quote ── */}
-      <Text style={styles.quote}>
+      <Text style={[styles.quote, isTablet && { maxWidth: 600, alignSelf: 'center' }]}>
         "Remember Me, and I will remember you." — Quran 2:152
       </Text>
-
     </View>
   );
 }
@@ -263,36 +171,19 @@ export default function ZikarScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.parchment },
 
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyText: { fontSize: 15, color: COLORS.textMid, textAlign: 'center' },
-
   // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: 22,
-    paddingTop: 18,
+    paddingTop: 14,
     paddingBottom: 6,
   },
-  title:    { fontSize: 26, fontWeight: '700', color: COLORS.textDark },
-  titleAr:  { fontSize: 18, color: COLORS.textGold, marginTop: 1 },
-  resetBtn: { fontSize: 14, color: COLORS.textLight, fontWeight: '500' },
-
-  // Step dots
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.parchmentDeep,
-  },
+  backBtn:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  backArrow: { fontSize: 26, color: COLORS.sage, lineHeight: 28, fontWeight: '300' },
+  backLabel: { fontSize: 14, color: COLORS.sage, fontWeight: '600' },
+  resetBtn:  { fontSize: 14, color: COLORS.textLight, fontWeight: '500' },
 
   // Tap area
   tapArea: {
@@ -305,16 +196,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
 
-  // Arabic halo
+  // Arabic halo (size set inline)
   arabicCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 22,
-    shadowColor: '#8B6830',
+    shadowColor: '#4A3AAA',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
     shadowRadius: 18,
@@ -333,26 +221,19 @@ const styles = StyleSheet.create({
   },
   count:   { fontSize: 72, fontWeight: '700', lineHeight: 80 },
   countOf: { fontSize: 20, color: COLORS.textLight, fontWeight: '400' },
+  hint:    { fontSize: 12, color: COLORS.textLight, textAlign: 'center' },
 
-  doneBadge: {
-    borderWidth: 1.5,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 5,
-    marginBottom: 8,
-  },
-  doneText: { fontSize: 13, fontWeight: '600' },
-  hint:     { fontSize: 12, color: COLORS.textLight, textAlign: 'center' },
+  // Completion
+  completedBox:  { alignItems: 'center', paddingHorizontal: 20 },
+  completedStar: { fontSize: 44, marginBottom: 6, color: COLORS.sage },
+  completedTitle:{ fontSize: 28, fontWeight: '700', color: COLORS.textDark, marginBottom: 4 },
+  completedSub:  { fontSize: 15, fontWeight: '600', textAlign: 'center' },
 
   // Progress
-  progressTrack: {
-    height: 4,
-    backgroundColor: COLORS.parchmentDeep,
-    marginHorizontal: 0,
-  },
-  progressFill: { height: '100%' },
+  progressTrack: { height: 4, backgroundColor: COLORS.parchmentDeep },
+  progressFill:  { height: '100%' },
 
-  // Footer quote
+  // Footer
   quote: {
     fontSize: 12,
     color: COLORS.textLight,
@@ -361,15 +242,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 14,
   },
-
-  // Completion
-  completedBox: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  completedStar:  { fontSize: 44, marginBottom: 10, color: COLORS.textGold },
-  completedTitle: { fontSize: 28, fontWeight: '700', color: COLORS.textDark, marginBottom: 8 },
-  completedSub:   { fontSize: 15, color: COLORS.textMid, textAlign: 'center', marginBottom: 22 },
-  completedQuote: { fontSize: 14, color: COLORS.textLight, fontStyle: 'italic', textAlign: 'center', marginBottom: 4 },
-  completedRef:   { fontSize: 12, color: COLORS.textGold },
 });

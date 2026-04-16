@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
 import ParchmentCard from '../components/ParchmentCard';
 import { useHealth } from '../context/HealthContext';
@@ -111,12 +111,14 @@ const hr = StyleSheet.create({
 });
 
 export default function JourneyScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const { history } = useHealth();
   const streak = computeStreak(history);
 
   return (
     <View style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, isTablet && { maxWidth: 600, alignSelf: 'center', width: '100%' }]} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
