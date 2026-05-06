@@ -15,7 +15,6 @@ import { COLORS } from '../constants/colors';
 import { computeWeights } from '../utils/scoreCalculator';
 import { scheduleAzanNotifications, requestNotificationPermission } from '../utils/prayerTimes';
 import { addPrayerTimesAsReminders } from '../utils/calendarUtils';
-import { Platform } from 'react-native';
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 

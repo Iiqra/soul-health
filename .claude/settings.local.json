@@ -7,7 +7,17 @@
       "Bash(npx @babel/parser --plugins jsx src/components/SoulCharacter.js)",
       "Bash(npx babel:*)",
       "Bash(node_modules/.bin/react-native bundle:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Read(//Users/iqraali/Projects/claude-projects/**)",
+      "Bash(flutter --version)",
+      "Bash(flutter analyze:*)",
+      "Bash(export PATH=$PATH:$HOME/fvm/default/bin:$HOME/.pub-cache/bin:/usr/local/bin:/opt/homebrew/bin)",
+      "Read(//Users/iqraali/**)",
+      "Bash(mdfind -name flutter -kind file)",
+      "Bash(grep -E \"bin/flutter$\")",
+      "Bash(grep -n \"import ''dart:io''\" lib/screens/settings_screen.dart)",
+      "Bash(grep -n \"import ''dart:math''\" lib/screens/zikar_list_screen.dart)",
+      "Bash(dart analyze:*)"
     ]
   }
 }
